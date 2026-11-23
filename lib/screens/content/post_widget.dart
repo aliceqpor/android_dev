@@ -1,28 +1,39 @@
 import "package:android_dev/screens/home_screen/models/post_model.dart";
-import "package:flutter/material.dart";
+import "package:android_dev/screens/content/comment_widget.dart";
+import 'package:flutter/material.dart';
+import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:android_dev/screens/home_screen/providers/post_providers.dart";
 
-class PostWidget extends StatefulWidget {
+class PostWidget extends ConsumerStatefulWidget {
   final PostModel? post;
-  const PostWidget({super.key,required this.post});
+  const PostWidget({super.key, required this.post});
 
   @override
-  State<PostWidget> createState() => _PostWidgetState();
+  ConsumerState<PostWidget> createState() => _PostWidgetState();
 }
 
-class _PostWidgetState extends State<PostWidget> {
-  final bool isLiked = false; 
- // This should ideally be managed by state management
+class _PostWidgetState extends ConsumerState<PostWidget> {
+  bool isLiked = false;
+  // This should ideally be managed by state management
 
- void openBottomSheet() {
+  void openBottomSheet() {
+    final comments = widget.post?.comments ?? [];
+
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
         return Container(
           height: 200,
           color: Colors.white,
-          child: Center(
-            child: Text('Bottom Sheet Content'),
-          ),
+          padding: const EdgeInsets.all(16),
+          child: comments.isEmpty
+              ? const Center(child: Text("No comments yet"))
+              : ListView.builder(
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
+                    return CommentWidget(comment: comments[index]);
+                  },
+                ),
         );
       },
     );
@@ -59,13 +70,16 @@ class _PostWidgetState extends State<PostWidget> {
               IconButton(
                 icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border),
                 onPressed: () {
+                  final post = widget.post;
+                  if (post == null) return;
+                  final notifier = ref.read(postsProvider.notifier);
+                  if (isLiked) {
+                    notifier.unlike(post);
+                  } else {
+                    notifier.like(post);
+                  }
                   setState(() {
-                    // This should ideally update the like count in a state management solution
-                    if (isLiked) {
-                      widget.post?.addLike((widget.post?.likeCount ?? 1) - 1);
-                    } else {
-                      widget.post?.addLike((widget.post?.likeCount ?? 0) + 1);
-                    }
+                    isLiked = !isLiked;
                   });
                 },
               ),
@@ -75,10 +89,7 @@ class _PostWidgetState extends State<PostWidget> {
                   openBottomSheet();
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () {},
-              ),
+              IconButton(icon: const Icon(Icons.share), onPressed: () {}),
               Spacer(),
               IconButton(
                 icon: const Icon(Icons.bookmark_border),
@@ -90,9 +101,8 @@ class _PostWidgetState extends State<PostWidget> {
             widget.post?.description ?? '',
             style: const TextStyle(fontSize: 16.0),
           ),
-
-        ],)
-
+        ],
+      ),
     );
   }
 }

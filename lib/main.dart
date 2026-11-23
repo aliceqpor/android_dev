@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import "screens/main_screen.dart";
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:android_dev/screens/home_screen/providers/post_providers.dart';
+import 'package:android_dev/screens/home_screen/services/post_services.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(ProviderScope(
+    overrides: [
+      postServicesProvider.overrideWithValue(PostServices()),
+    ],
+    child: const MainApp(),
+  ));
 }
 
 class MainApp extends StatelessWidget {
